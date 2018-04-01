@@ -12,13 +12,14 @@ contract BetProject
     betInfo[] bets;
     
     uint userCount;
-    uint constant userMax = 3;
+    uint userMax = 10;
     
     address winner; 
     uint lastNumber = 0;
     
-    function BetProject() public 
+    function BetProject(uint userMaxCount) public 
     {
+        userMax = userMaxCount;
         reset();
     }
     
@@ -102,9 +103,9 @@ contract BetProject
         return lastNumber;
     }
     
-    function getTotal() public constant returns (uint256)
+    function getTotal() public constant returns (uint)
     {
-        uint256 total = address(this).balance;
+        uint total = address(this).balance;
         return total;
     }
     
