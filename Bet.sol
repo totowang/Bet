@@ -1,103 +1,95 @@
 pragma solidity ^0.4.13;
 
-
-contract Project
+contract BetProject
 {
-    
-    struct Info
+    struct betInfo
     {
+        uint price;
         uint count;
         address lastUser;
     }
     
-    uint[] PriceList;
-    mapping(uint => Info) priceMapping;
+    betInfo[] bets;
     
-    uint userCount = 0;
-    uint maxUser = 10;
+    uint userCount;
+    uint constant userMax = 3;
     
     address winner; 
-    uint minPrice = 9999999;
+    uint lastNumber = 0;
     
-    function Project() public
+    function BetProject() public 
     {
         reset();
     }
     
     function reset() internal
     {
-        minPrice = 9999999;
         userCount = 0;
-        if(PriceList.length > 0)
+        
+        uint count = bets.length;
+        for (uint i = 0; i < count; i++)
         {
-            for(uint i = 0; i < PriceList.length; i++)
-            {
-                PriceList[i] = 0;
-                priceMapping[i].count = 0;
-            }
+            delete bets[i];
         }
     }
     
-    function bet() payable public
+    function bet() public payable
     {
         uint price = msg.value;
-        uint index = 0;
         bool finded = false;
-        uint count = PriceList.length;
-        if( count > 0)
+        uint count = bets.length;
+        for (uint i = 0; i < count; i++)
         {
-            for(uint i = 0; i < count; i++)
+            if(bets[i].price == price)
             {
-                if(PriceList[i] == price)
-                {
-                    index = i;
-                    finded = true;
-                    break;
-                }
+                bets[i].count++;
+                bets[i].lastUser = msg.sender;
+                finded = true;
+                break;
             }
         }
         
-        if(!finded)
+        if (!finded)
         {
-            index = count;
+            bets.push(betInfo(price,1,msg.sender));
         }
         
-        PriceList[index] = price;
-        priceMapping[index].count++;
-        priceMapping[index].lastUser = msg.sender;
         userCount ++;
         
-        if(userCount == maxUser)
+        if(userCount == userMax)
         {
             getWinner();
-            reset();
         }
     }
     
     function getWinner() internal returns (address)
     {
         bool finded = false;
-        uint count = PriceList.length;
-        if( count > 0)
+        uint count = bets.length;
+        uint minPrice = 999999 ether;
+        for (uint i = 0; i < count; i++)
         {
-            for(uint i = 0; i < count; i++)
+            if (bets[i].price < minPrice && bets[i].count == 1)
             {
-                if(PriceList[i] < minPrice)
-                {
-                    if(priceMapping[i].count == 1)
-                    {
-                        winner = priceMapping[i].lastUser;
-                        minPrice = PriceList[i];
-                        finded = true;
-                    }
-                }
+                winner = bets[i].lastUser;
+                minPrice = bets[i].price;
+                finded = true;
             }
         }
         
-        if(finded)
+        reset();
+        
+        if (finded)
         {
-            withdraw();
+            lastNumber = minPrice;
+            withdraw(); 
         }
+        else
+        {
+            lastNumber = 0;
+        }
+        
+        return winner;
     }
     
     function getLastWinner() public constant returns (address)
@@ -107,18 +99,17 @@ contract Project
     
     function getLastWinNumber() public constant returns (uint)
     {
-        return minPrice;
+        return lastNumber;
     }
     
     function getTotal() public constant returns (uint256)
     {
-        uint256 total = this.balance;
+        uint256 total = address(this).balance;
         return total;
     }
     
     function withdraw() private {
-        uint total = this.balance;
+        uint total = address(this).balance;
         winner.transfer(total);
     }
-    
 }
